@@ -1,7 +1,6 @@
 package com.example.zheng_shaozhuo.accessibility_20180115;
 
 import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.AccessibilityServiceInfo;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.util.Log;
@@ -9,13 +8,11 @@ import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.List;
 
 import static java.lang.Thread.sleep;
 
@@ -144,7 +141,13 @@ public class MyAccessibility extends AccessibilityService {
 
         if (addedNum < wxList.length && wxList.length > 0) {
             if (0 == normalStep) {
-                if (findNode2Execute(accessibilityEvent.getSource(), "搜索", null, "android.widget.EditText", wxList[addedNum])) {
+                try {
+                    sleep(600);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                if (EditSearchV()) {
                     normalStep = 1;
 
                     try {
@@ -156,7 +159,7 @@ public class MyAccessibility extends AccessibilityService {
                     normalStep = 5;
                 }
             } else if (1 == normalStep) {
-                if (findNode2Execute(accessibilityEvent.getSource(), "搜索:", null, "android.widget.TextView", null)) {
+                if (clickSearch()) {
                     normalStep = 2;
 
                     try {
@@ -166,7 +169,7 @@ public class MyAccessibility extends AccessibilityService {
                     }
                 }
             } else if (2 == normalStep) {
-                if (findNode2Execute(getRootInActiveWindow(), "添加到通讯录", null, "android.widget.Button", null)) {
+                if (clickAdd()) {
                     normalStep = 3;
                     addedNum++;
 
@@ -176,34 +179,64 @@ public class MyAccessibility extends AccessibilityService {
                         e.printStackTrace();
                     }
                     Log.i(TAG, "添加到通讯录 点击...");
-                } else if (findNode2Execute(getRootInActiveWindow(), "设置备注和标签", null, "android.widget.TextView", null)) {
-                    performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
-                    normalStep = 5;
-                    addedNum++;
+                } else if (checkWordsBytxt(getRootInActiveWindow(), "设置备注和标签") || justFindNode(getRootInActiveWindow(), "设置备注和标签", null, "android.widget.TextView")) {
+                    if (clickAdd()) {
+                        normalStep = 3;
+                        addedNum++;
+                    } else {
+                        performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
+                        normalStep = 5;
+                        addedNum++;
 
-                    try {
-                        sleep(2000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        try {
+                            sleep(2000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        Log.i(TAG, "该联系人已存在");
                     }
-                    Log.i(TAG, "该联系人已存在");
-                } else if (findNode2Execute(getRootInActiveWindow(), "该用户不存在", null, "android.widget.TextView", null)) {
-                    normalStep = 5;
-                    addedNum++;
-
-                    try {
-                        sleep((long) (Math.random() * 2800 + 1000));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                } else if (checkWordsBytxt(getRootInActiveWindow(), "该用户不存在") || justFindNode(getRootInActiveWindow(), "该用户不存在", null, "android.widget.TextView")) {
+                    while (true) {
+                        try {
+                            sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        if (clickClean()) {
+                            Log.i(TAG, "该用户不存在，那么add : " + addedNum);
+                            normalStep = 0;
+                            addedNum++;
+                            break;
+                        }
                     }
-                } else if (findNode2Execute(getRootInActiveWindow(), "操作过于频繁，请稍后再试", null, "android.widget.TextView", null)) {
-                    normalStep = 5;
+                } else if (checkWordsBytxt(getRootInActiveWindow(), "被搜帐号状态异常，无法显示") || justFindNode(getRootInActiveWindow(), "被搜帐号状态异常，无法显示", null, "android.widget.TextView")) {
+                    while (true) {
+                        try {
+                            sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        if (clickClean()) {
+                            Log.i(TAG, "该用户不存在，那么add : " + addedNum);
+                            normalStep = 0;
+                            addedNum++;
+                            break;
+                        }
+                    }
+                } else if (checkWordsBytxt(getRootInActiveWindow(), "操作过于频繁，请稍后再试") || justFindNode(getRootInActiveWindow(), "操作过于频繁，请稍后再试", null, "android.widget.TextView")) {
+                    while (true) {
+                        try {
+                            sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        if (clickClean()) {
+                            normalStep = 0;
+                            addedNum++;
+                            break;
+                        }
+                    }
                     isFreqperat++;
-                    try {
-                        sleep((long) (Math.random() * 36000 + 20000));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                 } else if (findNode2Execute(getRootInActiveWindow(), wxList[addedNum].toLowerCase(), null, "android.widget.TextView", null)) {
                     normalStep = 2;
                     addedNum++;
@@ -217,7 +250,7 @@ public class MyAccessibility extends AccessibilityService {
                 }
 
             } else if (3 == normalStep) {
-                if (findNode2Execute(getRootInActiveWindow(), "发送", null, "android.widget.TextView", null)) {
+                if (clickSend()) {
                     normalStep = 4;
 
                     try {
@@ -227,7 +260,7 @@ public class MyAccessibility extends AccessibilityService {
                     }
                 }
             } else if (4 == normalStep) {
-                performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
+                clickBack();
                 normalStep = 5;
 
                 try {
@@ -236,7 +269,7 @@ public class MyAccessibility extends AccessibilityService {
                     e.printStackTrace();
                 }
             }else if (5 == normalStep) {
-                if (findNode2Execute(getRootInActiveWindow(), "清除", null, "android.widget.ImageButton", null)) {
+                if (clickClean()) {
                     normalStep = 0;
 
                     try {
@@ -256,6 +289,41 @@ public class MyAccessibility extends AccessibilityService {
         Log.i(TAG, "Step: " + normalStep + ", eventTypeName:" + eventTypeName + ", Version: " + android.os.Build.VERSION.SDK_INT + ", " + accessibilityEvent.getClassName() + ", " + accessibilityEvent.getPackageName());
     }
 
+    private boolean EditSearchV() {
+        Log.i(TAG, "target node text: 搜索, contentDescription: , className: android.widget.EditText, inputText: " + wxList[addedNum]);
+
+        return findNode2Execute(getRootInActiveWindow(), "搜索", null, "android.widget.EditText", wxList[addedNum]);
+    }
+
+    private boolean clickSearch() {
+        Log.i(TAG, "target node text: 搜索, contentDescription: , className: android.widget.TextView");
+
+        return findNode2Execute(getRootInActiveWindow(), "搜索:", null, "android.widget.TextView", null);
+    }
+
+    private boolean clickClean() {
+        Log.i(TAG, "target node text: 清除, contentDescription: , className: android.widget.ImageButton");
+
+        return findNode2Execute(getRootInActiveWindow(), "清除", null, "android.widget.ImageButton", null);
+    }
+
+    private boolean clickAdd() {
+        Log.i(TAG, "target node text: 添加到通讯录, contentDescription: , className: android.widget.Button");
+
+        return findNode2Execute(getRootInActiveWindow(), "添加到通讯录", null, "android.widget.Button", null);
+    }
+
+    private boolean clickSend() {
+        Log.i(TAG, "target node text: 发送, contentDescription: , className: android.widget.TextView");
+
+        return findNode2Execute(getRootInActiveWindow(), "发送", null, "android.widget.TextView", null);
+    }
+
+    private void clickBack() {
+        performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
+    }
+
+
     private void bl(AccessibilityNodeInfo node) {
         if (null != node) {
             int num = node.getChildCount();
@@ -269,11 +337,72 @@ public class MyAccessibility extends AccessibilityService {
         }
     }
 
+    private boolean checkWordsBytxt(AccessibilityNodeInfo root, String kWrords) {
+        List<AccessibilityNodeInfo> list = root.findAccessibilityNodeInfosByText(kWrords);
+        if (list.size() > 0) {
+             return true;
+        }
+        return false;
+    }
+
+    private boolean justFindNode(AccessibilityNodeInfo node, String targetText, String targetContentDescription, String targetClassName) {
+        if (null != node) {
+            int childnum = node.getChildCount();
+            if (childnum == 0) {
+                CharSequence text = null;
+                CharSequence contentDescription = null;
+                CharSequence className = node.getClassName();
+
+                if (null != className && className.equals(targetClassName)) {
+                    if (null != targetText) {
+                        text = node.getText();
+                        if (null != text) {
+                            if (text.equals(targetText)) {
+                                Log.i(TAG, "[justFindNode] tnode text: " + node.getText() + ", contentDescription: " + node.getContentDescription() + ", className: " + node.getClassName());
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                    } else if(null != targetContentDescription) {
+                        contentDescription = node.getContentDescription();
+                        if (null != contentDescription) {
+                            if (contentDescription.equals(targetContentDescription)) {
+                                Log.i(TAG, "[justFindNode] tnode text: " + node.getText() + ", contentDescription: " + node.getContentDescription() + ", className: " + node.getClassName());
+                                return true;
+                            } else {
+                                return false;
+                            }
+                        }
+                    } else {
+                        return false;
+                    }
+                } else {
+                    Log.i(TAG, "[justFindNode] current node className is not target, targetClassName: " + targetClassName);
+                    return false;
+                }
+            } else {
+                boolean childFlag = false;
+                for (int i = 0; i < childnum; i++) {
+                    if (childFlag) {
+                        justFindNode(node.getChild(i), targetText, targetContentDescription, targetClassName);
+                    } else {
+                        childFlag = justFindNode(node.getChild(i), targetText, targetContentDescription, targetClassName);
+                    }
+                }
+                return childFlag;
+            }
+        }
+        return false;
+    }
+
     private boolean findNode2Execute(AccessibilityNodeInfo node, String targetText, String targetContentDescription, String targetClassName, String textLabel) {
         if (null != node) {
             int childnum = node.getChildCount();
             if (childnum == 0) {
-                Log.i(TAG, "current node text: " + node.getText() + ", contentDescription: " + node.getContentDescription() + ", className: " + node.getClassName());
+                Log.i(TAG, "[findNode2Execute] cnode text: " + node.getText() + ", contentDescription: " + node.getContentDescription() + ", className: " + node.getClassName());
                 boolean isTarget = false;
                 CharSequence text = null;
                 CharSequence contentDescription = null;
