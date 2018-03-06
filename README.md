@@ -2,6 +2,7 @@
 调用Android AccessibilityService服务
 
 实现自动添加好友
+#### 基于Android系统AccessibilityService辅助功能, 触发事件为 添加朋友页面点击输入账号, 待加账号数据来自接口 http://iface.vgambler.xyz/, 请自行修改
 
 微信好友来源于在线数据
 
